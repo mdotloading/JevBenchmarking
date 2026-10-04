@@ -8,7 +8,7 @@ print("Loading Laya...")
 
 agent = laya.load(
     "convaiinnovations/laya",
-    device= device
+    device=device
     )
 
 
