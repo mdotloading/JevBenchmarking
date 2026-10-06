@@ -1,7 +1,21 @@
+# Local secrets (keep the shareable example)
 .env
+.env.*
+!.env.example
+
+# Python environments and caches
 .venv/
 venv/
 __pycache__/
-*.pyc
+*.py[cod]
+.pytest_cache/
+
+# Local datasets and generated training artifacts
+/data/
+/checkpoints/
+/results/raw/
+
+# Notebook and operating-system artifacts
+.ipynb_checkpoints/
 .DS_Store
-*__pycache__/
+Thumbs.db

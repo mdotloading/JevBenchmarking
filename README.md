@@ -2,7 +2,7 @@
 
 This repository benchmarks decision-oriented models across the three output primitives used by Jev: categorical choice, binary decision (`noul`), and ordinal score. The goal is to compare task accuracy, response latency, token usage, and estimated cost under one shared evaluation harness while keeping the same structured state and question format for every model.
 
-The benchmark runs each model on the first 200 examples from the test split of each selected dataset configuration. Per-example predictions are written as JSON Lines files, and aggregate metrics are written to `results/summary.csv`.
+The benchmark runs each model on the first 800 examples from the test split of each selected dataset configuration. Per-example predictions are written as JSON Lines files, and aggregate metrics are written to `results/summary.csv`.
 
 ## What is being evaluated?
 
@@ -35,7 +35,7 @@ Each model receives the same parsed example and returns a normalized record cont
 - `noul` outputs from Jev-compatible models are thresholded at `0.5`; Qwen is instructed to return `0` or `1` directly.
 - `score` outputs from Jev-compatible models are rounded to an integer; Qwen is instructed to return an integer directly.
 - Accuracy is exact-match accuracy for all three primitives.
-- The configured sample size is 200 examples per model-primitive pair, or the full test split when it contains fewer than 200 examples.
+- The configured sample size is 800 examples per model-primitive pair, or the full test split when it contains fewer than 800 examples.
 - Evaluation is sequential and deterministic decoding is used for Qwen (`do_sample=False`).
 
 ## Latency methodology
@@ -77,18 +77,18 @@ The latest aggregate results from [`results/summary.csv`](results/summary.csv) a
 
 | Model | Primitive | Samples | Accuracy | Correct | Mean latency (ms) | Median latency (ms) | p95 latency (ms) | Input tokens | Output tokens | Total cost | Avg. cost/request |
 |---|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|
-| Jev | `choice` | 200 | **82.0%** | 164 | 470.22 | 461.53 | 563.11 | 337,810 | 165,817 | $0.014188 | $0.000071 |
-| Jev | `noul` | 200 | **92.5%** | 185 | 469.56 | 461.84 | 542.80 | 88,804 | 4,200 | $0.003730 | $0.000019 |
-| Jev | `score` | 200 | **34.0%** | 68 | 460.32 | 452.57 | 525.44 | 181,219 | 3,600 | $0.007611 | $0.000038 |
-| Laya | `choice` | 200 | 37.0% | 74 | 50.18 | **48.20** | 69.51 | 66,419 | 0 | $0.000000 | $0.000000 |
-| Laya | `noul` | 200 | 83.5% | 167 | 47.65 | **48.03** | 61.95 | 38,339 | 0 | $0.000000 | $0.000000 |
-| Laya | `score` | 200 | 22.5% | 45 | 51.36 | **48.96** | 72.58 | 92,559 | 0 | $0.000000 | $0.000000 |
-| JPT | `choice` | 200 | 66.0% | 132 | 205.18 | 189.48 | 267.23 | 191,803 | 200 | $0.000000 | $0.000000 |
-| JPT | `noul` | 200 | 78.0% | 156 | 116.00 | 110.21 | 159.95 | 48,393 | 200 | $0.000000 | $0.000000 |
-| JPT | `score` | 200 | 29.0% | 58 | 175.18 | 159.11 | 239.19 | 141,469 | 200 | $0.000000 | $0.000000 |
-| Qwen | `choice` | 200 | 36.0% | 72 | 490.17 | 475.72 | 743.24 | 92,203 | 1,400 | $0.000000 | $0.000000 |
-| Qwen | `noul` | 200 | 44.5% | 89 | 293.30 | 279.35 | 391.28 | 46,026 | 800 | $0.000000 | $0.000000 |
-| Qwen | `score` | 200 | 32.5% | 65 | 321.98 | 306.93 | 419.32 | 134,503 | 800 | $0.000000 | $0.000000 |
+| Jev | `choice` | 800 | **79.6%** | 637 | 478.13 | 468.94 | 547.34 | 1,351,668 | 663,376 | $0.056770 | $0.000071 |
+| Jev | `noul` | 800 | **90.8%** | 726 | 474.66 | 463.92 | 556.99 | 349,293 | 16,800 | $0.014670 | $0.000018 |
+| Jev | `score` | 800 | 33.5% | 268 | 473.12 | 462.55 | 566.17 | 736,943 | 14,400 | $0.030952 | $0.000039 |
+| Laya | `choice` | 800 | 36.4% | 291 | 48.18 | **46.22** | 65.04 | 266,133 | 0 | $0.000000 | $0.000000 |
+| Laya | `noul` | 800 | 85.0% | 680 | 44.02 | **41.08** | 61.45 | 147,496 | 0 | $0.000000 | $0.000000 |
+| Laya | `score` | 800 | 26.6% | 213 | 44.03 | **40.53** | 67.64 | 372,325 | 0 | $0.000000 | $0.000000 |
+| JPT | `choice` | 800 | 63.9% | 511 | 201.10 | 189.67 | 258.24 | 767,639 | 800 | $0.000000 | $0.000000 |
+| JPT | `noul` | 800 | 76.4% | 611 | 100.93 | 98.38 | 117.84 | 187,669 | 800 | $0.000000 | $0.000000 |
+| JPT | `score` | 800 | 29.4% | 235 | 187.27 | 167.33 | 340.40 | 579,023 | 800 | $0.000000 | $0.000000 |
+| Qwen | `choice` | 800 | 37.0% | 296 | 495.03 | 483.11 | 678.54 | 369,239 | 5,560 | $0.000000 | $0.000000 |
+| Qwen | `noul` | 800 | 42.5% | 340 | 288.39 | 277.87 | 366.60 | 178,251 | 3,200 | $0.000000 | $0.000000 |
+| Qwen | `score` | 800 | **39.8%** | 318 | 328.12 | 320.28 | 426.72 | 550,100 | 3,200 | $0.000000 | $0.000000 |
 
 The generated CSV column order is:
 

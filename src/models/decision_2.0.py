@@ -3,9 +3,11 @@ import huggingface_hub
 from datasets import load_dataset
 from dotenv import load_dotenv
 import os
+from pathlib import Path
+
 load_dotenv()
 HF_TOKEN = os.getenv("HF_TOKEN")
-MODEL_ID = "vllm-sr/Decision-2.0-Kai-0.6B"
+MODEL_ID = "vllm-sr/Decision-2.0-Eos-0.8B"
 
 choice_ds = load_dataset(
     "Praveenrajus/jev-bench",

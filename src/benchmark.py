@@ -9,15 +9,18 @@ from dotenv import load_dotenv
 from datasets import load_dataset
 from src.data.parser import parse_row
 from src.models.jev import predict_jev
-from src.models.laya import predict_laya
 from src.models.jpt import predict_jpt
+from src.models.laya import predict_laya
 from src.models.qwen_local import predict_qwen
 
 load_dotenv()
 
 HF_TOKEN = os.getenv("HF_TOKEN")
 
-N_SAMPLES = 200
+N_SAMPLES = 500
+
+
+
 
 RESULTS_DIR = Path("results")
 RAW_RESULTS_DIR = RESULTS_DIR / "raw"
@@ -31,13 +34,15 @@ RAW_RESULTS_DIR.mkdir(
 
 def save_results(
         results,
-        model_name,
+        # model_name,
         primitive,
 ):
     """
     Saves every single predictions json output in a jsonl file
     
     """
+    # is this valid?
+    model_name = results[0]['model'].replace('/', '_').replace('\\', '_')  # Keep the server's model name safe for filenames.
     path = (
         RAW_RESULTS_DIR / f"{model_name}_{primitive}.jsonl"
     )
@@ -195,8 +200,8 @@ def main():
 
     # ================= map datasets and models for modulairty ===================
     datasets = {
-        "choice": choice_ds,
-        "noul": noul_ds,
+        # "choice": choice_ds,
+        # "noul": noul_ds,
         "score": score_ds
     }
 
@@ -205,19 +210,31 @@ def main():
             "predict_fn": predict_jev,
             "sync_cuda": False,
         },
-        "laya": {
-            "predict_fn": predict_laya,
-            "sync_cuda": True,
-        },
         "jpt": {
             "predict_fn": predict_jpt,
             "sync_cuda": False
-        },
-        "qwen": {
-            "predict_fn": predict_qwen,
-            "sync_cuda": True,
         }
     }
+
+
+
+
+    #     "laya": {
+    #         "predict_fn": predict_laya,
+    #         "sync_cuda": True,
+    #     },
+    #     "jpt": {
+    #         "predict_fn": predict_jpt,
+    #         "sync_cuda": False
+    #     },
+    #     "qwen": {
+    #         "predict_fn": predict_qwen,
+    #         "sync_cuda": True,
+    #     }
+    # }
+
+
+
 
     # ========================== loop over the hash maps - once for every model, once for every modality =======================
     for model_name, model_config in models.items():
@@ -246,14 +263,10 @@ def main():
             )
 
             # save jsonl file with every single example (1 file per model and modality)
-            save_results(
-                results,
-                model_name,
-                primitive
-            )
+            save_results(results, primitive)  # Match the two arguments accepted by save_results.
 
             summary = summarize_results(results)
-            summary['model'] = model_name
+            summary['model'] = results[0]['model']  # Record the model actually served, rather than the dictionary key.
             summary['primitive'] = primitive
 
             all_summaries.append(summary)

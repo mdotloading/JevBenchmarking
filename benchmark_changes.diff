@@ -1,0 +1,28 @@
+--- src/benchmark.py (before)
++++ src/benchmark.py (after)
+@@ -42,7 +42,7 @@
+     
+     """
+     # is this valid?
+-    model_name = results[0]['model']
++    model_name = results[0]['model'].replace('/', '_').replace('\\', '_')  # Keep the server's model name safe for filenames.
+     path = (
+         RAW_RESULTS_DIR / f"{model_name}_{primitive}.jsonl"
+     )
+@@ -263,14 +263,10 @@
+             )
+ 
+             # save jsonl file with every single example (1 file per model and modality)
+-            save_results(
+-                results,
+-                model_name,
+-                primitive
+-            )
++            save_results(results, primitive)  # Match the two arguments accepted by save_results.
+ 
+             summary = summarize_results(results)
+-            summary['model'] = model_name
++            summary['model'] = results[0]['model']  # Record the model actually served, rather than the dictionary key.
+             summary['primitive'] = primitive
+ 
+             all_summaries.append(summary)
