@@ -228,8 +228,22 @@ def decision_logits(model, input_ids, attention_mask, option_token_ids):
     return F.linear(hidden, weight, bias).float()
  
  
-def forward_batch(model, batch, primitive="choice"):
-    """Option probabilities, Brier loss and predictions for one batch."""
+def gaussian_soft_targets(target_indices, option_mask, sigma):
+    """Ordinal soft labels: a Gaussian around the gold level, restricted to the row's real options."""
+    levels = torch.arange(option_mask.shape[-1], device=option_mask.device, dtype=torch.float32)
+    weights = torch.exp(-(levels[None, :] - target_indices[:, None].float()).pow(2) / (2 * sigma ** 2))
+    weights = weights * option_mask
+    return weights / weights.sum(dim=-1, keepdim=True)
+
+
+def forward_batch(model, batch, primitive="choice", score_sigma=None):
+    """Option probabilities, losses and predictions for one batch.
+
+    per_example_loss is always the hard-label Brier score (reported in logs and validation).
+    The training objective is the same Brier score, except for score questions with
+    score_sigma > 0: then it is cross-entropy against Gaussian soft targets, so predicting
+    a level next to the gold one costs less than predicting a distant one.
+    """
     tensors = {key: value.to(DEVICE, non_blocking=True) for key, value in batch.items()}
     with torch.autocast(DEVICE.type, dtype=DTYPE, enabled=DEVICE.type == "cuda"):
         option_logits = decision_logits(
@@ -241,6 +255,13 @@ def forward_batch(model, batch, primitive="choice"):
     # Multi-class Brier score: squared distance between the predicted distribution and the one-hot answer.
     targets = F.one_hot(tensors["target_indices"], num_classes=probabilities.shape[-1]).float()
     per_example_loss = (probabilities - targets).pow(2).sum(dim=-1)
+
+    objective = per_example_loss
+    if primitive == "score" and score_sigma:
+        soft = gaussian_soft_targets(tensors["target_indices"], tensors["option_mask"], score_sigma)
+        # Masked slots have log p = -inf and q = 0; zero them first to avoid 0 * -inf = NaN.
+        log_probs = F.log_softmax(option_logits, dim=-1).masked_fill(~tensors["option_mask"], 0.0)
+        objective = -(soft * log_probs).sum(dim=-1)
  
     predictions = probabilities.argmax(dim=-1)
     if primitive == "score":
@@ -249,8 +270,9 @@ def forward_batch(model, batch, primitive="choice"):
         predictions = (probabilities * levels).sum(dim=-1).round().long()
  
     return {
-        "loss": per_example_loss.mean(),
+        "loss": objective.mean(),
         "per_example_loss": per_example_loss.detach(),
+        "per_example_objective": objective.detach(),
         "prediction_indices": predictions.detach(),
         "target_indices": tensors["target_indices"].detach(),
         "correct_mask": (predictions == tensors["target_indices"]).detach(),
