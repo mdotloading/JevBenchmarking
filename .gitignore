@@ -19,3 +19,4 @@ __pycache__/
 .ipynb_checkpoints/
 .DS_Store
 Thumbs.db
+/results/tabular/raw/
